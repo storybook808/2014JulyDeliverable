@@ -33,107 +33,114 @@
 			
 '''
 
-
-
-# import libraries
-import datetime as dt
-import csv
-import sys
-import os
-
-
-# open the input and output files
-try:
-    input_filename = sys.argv[1]
-except:
-    print "Please use appropriate syntax."
-    print '>>>"python reshape.py <file_name>"'
-    quit()
-output_filename = "full_conversion.csv"
-
-# setup the reader
-try:
-    input_file = open(input_filename, "r")
-    reader = csv.reader(input_file, delimiter = ",")
-except:
-    print "File not found."
-    quit()
-    
-#os.system("cls")
-
-# This will store the names for the serial numbers
-# adding serial numbers that are not in data will not
-# cause errors
-serial_names = {}
-# define functions
-# this determines the serial numbers that are not needed
-# adding serial numbers that are not in data will not 
-# cause errors
-def in_delete_serial_name(name):
-    delete_serial_name = ()
-        
-    for i in range(0, len(delete_serial_name)):
-        if(name == delete_serial_name[i]):
-            return True
-    return False
-
-
-# notice to begin code    
-print "Processing... Please Wait"
-    
-# setup the writer
-output_file = open(output_filename, "wb")
-writer = csv.writer(output_file,delimiter = ",")
-
-# find the row for the header
-input_row = reader.next()
-input_row = reader.next()
-
-sensors = []
-
-# find the sensor names
-sensors = input_row[2:]
-for i in range(0, len(sensors)):
-    try:
-        sensors[i] = serial_names[sensors[i].split(",")[2].split(" ")[-1].replace(")","")]
-    except:
-        sensors[i] = sensors[i].split(",")[2].split(" ")[-1].replace(")","")
-
-# find the row with data
-output_row = []
-
-for input_row in reader:
-    for i in range(2, len(input_row)):
-        output_row = []        
-	datetime_ = dt.datetime.strptime(input_row[1],'%m/%d/%y %H:%M:%S %p')
-        output_row.append(datetime_)
-        output_row.append(sensors[i-2])
-        output_row.append(input_row[i])
-        writer.writerow(output_row)
-        del output_row[:]
-
-input_file.close()
-output_file.close()
-
-# notice for complete full conversion
-print "Finished full conversion."
-
-
-print "Processing... Please wait"
-# setup the writer
-input_file = open("full_conversion.csv", "r")
-reader = csv.reader(input_file, delimiter = ",")
-output_file = open("filtered_conversion.csv", "wb")
-writer = csv.writer(output_file, delimiter = ",")
-
-# write to the file
-for input_row in reader:
-    if in_delete_serial_name(input_row[1]) == False:
-        writer.writerow(input_row)
-                
-
-input_file.close()
-output_file.close()
-
-print "Finished filtered conversion"
-quit()
+def process_hobo_file(input_filename):
+	# import libraries
+	import csv
+	import sys
+	import os
+	import datetime
+	
+	
+	# open the input and output files
+	#try:
+	#    input_filename = sys.aragv[1]
+	#except:
+	#    try:
+	#        input_filename = "input.csv"
+	#    except:
+	#        print "Please use appropriate syntax."
+	#        print '>>>"python reshape.py <file_name>"'
+	#        quit()
+	output_filename = "full_conversion.csv"
+	
+	# setup the reader
+	try:
+	    input_file = open(input_filename, "r")
+	    reader = csv.reader(input_file, delimiter = ",")
+	except:
+	    print "File not found.****"
+	    quit()
+	    
+	#os.system("cls")
+	
+	# This will store the names for the serial numbers
+	# adding serial numbers that are not in data will not
+	# cause errors
+	serial_names = {}
+	# define functions
+	# this determines the serial numbers that are not needed
+	# adding serial numbers that are not in data will not 
+	# cause errors
+	def in_delete_serial_name(name):
+	    delete_serial_name = ()
+	        
+	    for i in range(0, len(delete_serial_name)):
+	        if(name == delete_serial_name[i]):
+	            return True
+	    return False
+	
+	def skip_null_values(row, index):
+	    if row[index] == "":
+	        return True
+	    else:
+	        return False
+	
+	# notice to begin code    
+	print "Processing... Please Wait"
+	    
+	# setup the writer
+	output_file = open(output_filename, "wb")
+	writer = csv.writer(output_file,delimiter = ",")
+	
+	# find the row for the header
+	input_row = reader.next()
+	input_row = reader.next()
+	
+	sensors = []
+	
+	# find the sensor names
+	sensors = input_row[2:]
+	for i in range(0, len(sensors)):
+	    try:
+	        sensors[i] = serial_names[sensors[i].split(",")[2].split(" ")[-1].replace(")","")]
+	    except:
+	        sensors[i] = sensors[i].split(",")[2].split(" ")[-1].replace(")","")
+	
+	# find the row with data
+	output_row = []
+	
+	for input_row in reader:
+	    for i in range(2, len(input_row)):
+	        output_row = []        
+		timestamp = datetime.datetime.strptime(input_row[1], "%m/%d/%y %H:%M:%S %p")
+	        output_row.append(timestamp)
+	        output_row.append(sensors[i-2])
+	        output_row.append(input_row[i])
+	        writer.writerow(output_row)
+	        del output_row[:]
+	
+	input_file.close()
+	output_file.close()
+	
+	# notice for complete full conversion
+	print "Finished full conversion."
+	
+	print "Processing... Please wait"
+	# setup the writer
+	input_file = open("full_conversion.csv", "r")
+	reader = csv.reader(input_file, delimiter = ",")
+	output_file = open("filtered_conversion.csv", "wb")
+	writer = csv.writer(output_file, delimiter = ",")
+	
+	# write to the file
+	for input_row in reader:
+	    if in_delete_serial_name(input_row[1]) == False:
+	        if skip_null_values(input_row, 2) == False:
+	            writer.writerow(input_row)
+	                
+	
+	input_file.close()
+	output_file.close()
+	
+	print "Finished filtered conversion"
+	

@@ -13,15 +13,16 @@ import psycopg2
 import datetime
 import shutil
 import logging
+from hoboReshape import process_hobo_file
 
-HOBOSCRIPT = "hobo-reshape.py"
-logging.basicConfig(filename='error_log',level=logging.DEBUG)
+#setup logging
+logging.basicConfig(filename='error_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
 
 #setup the server connection for data transferring
 conn = psycopg2.connect("dbname=postgres user=postgres password=energyaudit1!")
 cur = conn.cursor()
 
-def insert_data_hobo(insertFile,conn):
+def insert_data(insertFile,conn,table):
 	import csv
 	reader = csv.reader(insertFile)
 	error = 0
@@ -29,8 +30,16 @@ def insert_data_hobo(insertFile,conn):
 		try:
 			cur.execute("BEGIN;")
 			cur.execute("SAVEPOINT my_savepoint;")
-			cur.execute("INSERT INTO hobo (datetime,sensor_id,value) VALUES (%s,%s,%s);",(row[0],row[1],row[2]))
+			if table == 'hobo':
+				cur.execute("INSERT INTO hobo (datetime,sensor_id,value) VALUES (%s,%s,%s);",(row[0],row[1],row[2]))
+			elif table == 'egauge':
+				cur.execute("INSERT INTO egauge (datetime,sensor_id,value) VALUES (%s,%s,%s);",(row[0],row[1],row[2]))
+			else:
+				print "Warning: table not specified"
+				logging.warning('table not specified')
+				quit()
 			conn.commit()
+
 		except Exception, e:
 			cur.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
 			logging.warning(str(row[0])+","+row[1]+","+str(row[2])+str(e)+"\n")
@@ -38,6 +47,7 @@ def insert_data_hobo(insertFile,conn):
 #		else:
 #			cur.execute("RELEASE SAVEPOINT my_savepoint;")
 	print "There are "+str(error)+" error(s)\n"
+	insertFile.close()
 
 def inser_data_egauge(insertFile,conn):
 	import csv
@@ -60,40 +70,27 @@ def inser_data_egauge(insertFile,conn):
 	conn.commit()
 	
 
-#pickout the name of the hobo files
+#gather the names of files from the hobo network
 targetFilenames = os.listdir('hobo')
 
 #for each target file
 for targetFilename in targetFilenames:
 	#run the script for that target file
-	#targetPath = os.path.join('hobo',targetFilename)
-	#subprocess.call(["python", HOBOSCRIPT, targetPath])
-	#delete all the null entries in that output file
-	inputFile = open("filtered_conversion.csv","r")
-	outputFile = open("hoboToDb.csv","wb")
-	reader = csv.reader(inputFile)
-	writer = csv.writer(outputFile)
-	#for each line in the file
-	for line in reader:
-		#if there is no null value
-		if len(line[2]) != 0:
-			#then write it to the new file
-			writer.writerow(line)
-	inputFile.close()
-	outputFile.close()
+	targetPath = os.path.join('hobo',targetFilename)
+	process_hobo_file(targetPath)
 
 	#insert the data into the database
-	insertFile = open("hoboToDb.csv","r")
-	insert_data_hobo(insertFile,conn)
-	insertFile.close()
+	insertFile = open("filtered_conversion.csv","r")
+	insert_data(insertFile,conn,'hobo')
 	quit()
+
 
 #do the same thing with the egauge
 targetFilenames = os.listdir('egauge')
 for targetFilename in targetFilenames:
 	targetPath = os.path.join('egauge',targetFilename)
 	insertFile = open(targetPath,"r")
-	inser_data_egauge(insertFile,conn)
+	insert_data(insertFile,conn,'egauge')
 	insertFile.close()
 		
 #move file to archive and delete all metafiles
