@@ -7,6 +7,7 @@ database.
 import datetime
 import time
 from Egaugebin import EgaugeUtility
+from Serverbin import ServerUtility
 from Hobowarebin import HobowareUtility
 import os
 
@@ -22,32 +23,30 @@ __status__ = "Prototype"
 def process_hobo_files():
 	hobo_files = hobo.get_hobo_files()
 	if len(hobo_files) == 0:
-		print "There were no data collected from the Hobo Network\n"
+		print "At "+str(datetime.datetime.now())+" there were no data collected from the Hobo Network\n"
 		return 0
 	for hobo_file in hobo_files:
+		print 'processing '+hobo_file
 		output_filename = hobo.extract_data(hobo_file)
 		output_filename = hobo.edit_output(output_filename)
-		hobo.insert_hobo_data_into_database(output_filename)
+		server.insert_data_into_database(output_filename,'hobo')
 		hobo.clean_folder()
 
 try:
+	#display greeting
 	print '\n                *****    Welcome to the    *****'
 	print '"Autonomous Acquisition of Energy and Environmental Data System"'
 	print '                           (A2-E2 DS)\n'
-	egauge = EgaugeUtility.EgaugeUtility()
-	try:
-		old_time = datetime.datetime.now()
-		from_str = str(old_time)[:-9]+'00'	
-		to_str = from_str
-		data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
-	except:
-		print 'Your eGauge device is not properly connected.'
-		print 'Please check your settings and that the ethernet'
-		print 'cable is properly connected, then run ADASEED again.'
-		quit()
-	raw_input('Press Enter to start the "A2-E2 DS"...')
 	#instance EgaugeUtility Class
+	egauge = EgaugeUtility.EgaugeUtility()
+	server=ServerUtility.ServerUtility()
 	hobo = HobowareUtility.HobowareUtility()
+	#setup the tables if not setup
+	server.create_table('hobo')
+	server.create_table('egauge')
+	#check to see if egauge is properly installed and synced up
+	egauge.check_time_sync()
+	raw_input('Press Enter to start the "A2-E2 DS"...')
 	#get time now and store as 'from' time
 	old_time = datetime.datetime.now()
 	from_str = str(old_time)[:-9]+'00'
@@ -57,7 +56,8 @@ try:
 	#start looping
 	while 1:
 		#wait every 2 hours
-		time.sleep(7200)
+		#time.sleep(7200)
+		time.sleep(120)
 		#insert hobo data into database
 		process_hobo_files()
 		#take time now store as "to" time
@@ -70,7 +70,7 @@ try:
 		#convert csv to eileen shape
 		outputFilename= egauge.egauge_to_eshape(egaugeFilename)
 		#insert egauge data into database
-		egauge.insert_egauge_data_into_database(outputFilename)
+		server.insert_data_into_database(outputFilename,'egauge')
 		#set old time to new time
 		from_str = to_str
 		egauge.store_last_query_time(from_str)
@@ -92,7 +92,8 @@ except KeyboardInterrupt:
 	#convert csv to eileen shape
 	outputFilename= egauge.egauge_to_eshape(egaugeFilename)
 	#insert egauge data into database
-	egauge.insert_egauge_data_into_database(outputFilename)
+	print outputFilename
+	server.insert_data_into_database(outputFilename,'egauge')
 	egauge.archive_egauge_data()
 	hobo.archive_hobo_data()
 		

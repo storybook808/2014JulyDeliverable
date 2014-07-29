@@ -13,11 +13,12 @@ logging.basicConfig(filename='error_log',level=logging.DEBUG,format='%(asctime)s
 
 class EgaugeUtility:
 	
-	def __init__(self,\
+	def __init__(self,egauge_url='192.168.1.88',\
 		file_location = os.path.dirname(os.path.abspath(__file__)),\
 		output_file_location = os.path.dirname(os.path.abspath(__file__))):
 		self._file_location = file_location
 		self._output_file_location = output_file_location
+		self._egauge_url = egauge_url
 
 	def egauge_to_eshape(self,src):
 		'''
@@ -132,7 +133,33 @@ class EgaugeUtility:
 	    print e
 	    return None, None
 	  return response, content
-	    
+
+        def check_time_sync(self):
+	    print 'Checking to see if the eGauge is properly installed.\nThis may take up to 15 seconds.'
+	    try:
+	    	local_computer_time = datetime.now()
+	    	epoch_local_egauge_time = int(self.get_egauge_time())
+	    	local_egauge_time = datetime.fromtimestamp(epoch_local_egauge_time)
+	    	timeDiff = local_computer_time - local_egauge_time
+	    except:
+		print 'Your eGauge device is not properly connected.'
+		print 'Please check your settings and that the ethernet'
+		print 'cable is properly connected, then run ADASEED again.'
+		quit()
+	    if abs(timeDiff.days*86400+timeDiff.seconds) > 45 :
+		    print "Computer and eGauge is not synced, please check the settings\nof the eGauge and local computer then run ADASEED again."
+		    quit()
+            print 'Your eGauge is properly installed.'
+
+
+	def gmt_to_local(self,datetime):
+	    offset = timedelta(seconds=self.get_local_time_offset())
+	    return datetime + offset
+
+	def local_to_gmt(self,datetime):
+	    offset = timedelta(seconds=self.get_local_time_offset())
+	    return datetime - offset
+
 	def pull_from_egauge(self,from_str,to_str):
 	    from optparse import OptionParser
 	    parser = OptionParser(usage="usage: %prog device_url from_date to_date [options]")
@@ -166,6 +193,13 @@ class EgaugeUtility:
 
 	    root = ET.fromstring(data)
 	    return root, from_str, to_str
+
+        def get_local_time(self,root):
+	    timestamp = int(root[0].attrib['time_stamp'],0)
+	    offset = self.get_local_time_offset()
+	    timestamp = timestamp + offset
+	    timestamp = datetime.utcfromtimestamp(timestamp)
+	    return timestamp
 	 
 	def data_to_csv(self, root, from_str, to_str):
 	    from_str = from_str.replace(' ','_').replace(':','.')
@@ -184,10 +218,11 @@ class EgaugeUtility:
 	
 	    #setup timestamp
 	    #this is where you need to fix it so that the timestamp is local time
-	    timestamp = int(root[0].attrib['time_stamp'],0)
-	    offset = self.get_local_time_offset()
-	    timestamp = timestamp + offset
-	    timestamp = datetime.utcfromtimestamp(timestamp)
+	    #timestamp = int(root[0].attrib['time_stamp'],0)
+	    #offset = self.get_local_time_offset()
+	    #timestamp = timestamp + offset
+	    #timestamp = datetime.utcfromtimestamp(timestamp)
+	    timestamp = self.get_local_time(root)
 	    
 	    deltat = int(root[0].attrib['time_delta'],0)
 	    deltat = timedelta(0,deltat,0)
@@ -204,33 +239,6 @@ class EgaugeUtility:
 	
 	    outputFile.close()
 	    return outputFilename
-
-	def insert_egauge_data_into_database(self,insertFilename):
-		import csv
-		import psycopg2
-
-		conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
-		cur = conn.cursor()
-
-		insertFile = open(insertFilename,'r')
-		reader = csv.reader(insertFile)
-		error = 0
-		print "Inserting Egauge Data into database now ..."
-		for row in reader:
-			try:
-				cur.execute("BEGIN;")
-				cur.execute("SAVEPOINT my_savepoint;")
-				cur.execute("INSERT INTO egauge (datetime,sensor_id,value) VALUES (%s,%s,%s);",(row[0],row[1],row[2]))
-				conn.commit()
-			except Exception, e:
-				cur.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
-				logging.warning(str(row[0])+","+row[1]+","+str(row[2])+str(e)+"\n")
-				error = error + 1
-		print "At "+ str(datetime.now()) + " there were "+str(error)+" error(s)"
-		print "please refer to the 'error_log' file for more information.\n"
-		insertFile.close()
-		#os.remove(insertFilename)
-		conn.close()
 
 	def archive_egauge_data(self):
 		files = os.listdir('egauge')
@@ -257,3 +265,12 @@ class EgaugeUtility:
 		localtz = dateutil.tz.tzlocal()
 		localoffset = localtz.utcoffset(datetime.now())	
 		return localoffset.days*86400 + localoffset.seconds
+
+	def get_egauge_time(self):
+		import httplib2
+		req = httplib2.Http(timeout=15)
+		req.add_credentials('owner','default')
+		response,content = req.request("http://"+self._egauge_url+"/cgi-bin/egauge?inst",headers={'Connect': 'Keep-Alive','accept-encoding': 'gzip'})
+		root = ET.fromstring(content)
+		return root[0].text
+

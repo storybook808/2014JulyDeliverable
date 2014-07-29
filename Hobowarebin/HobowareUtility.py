@@ -237,39 +237,6 @@ class HobowareUtility:
        list = os.listdir('hobo')
        return list
 
-    def insert_hobo_data_into_database(self,insertFilename):
-       '''
-       given: a file name of a csv file
-       return: nothing, but inputs the data into a psql database on the local
-               computer
-       '''
-       import csv
-       import psycopg2
-       conn = psycopg2.connect
-       
-       conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
-       cur = conn.cursor()
-       
-       insertFile = open(insertFilename,'r')
-       reader = csv.reader(insertFile)
-       error = 0
-       print "Inserting Hoboware Data into database now ..."
-       for row in reader:
-       	try:
-       		cur.execute("BEGIN;")
-       		cur.execute("SAVEPOINT my_savepoint;")
-       		cur.execute("INSERT INTO hobo (datetime,sensor_id,value) VALUES (%s,%s,%s);",(row[0],row[1],row[2]))
-       		conn.commit()
-       	except Exception, e:
-       		cur.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
-       		logging.warning(str(row[0])+","+row[1]+","+str(row[2])+str(e)+"\n")
-       		error = error + 1
-       print "At "+str(datetime.datetime.now()) + " there were "+str(error)+" error(s)"
-       print "please refer to the 'error_log' file for more information.\n"
-       insertFile.close()
-       os.remove(insertFilename)
-       conn.close()
-
     def archive_hobo_data(self):
        '''
        given: nothing
