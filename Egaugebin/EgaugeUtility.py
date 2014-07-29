@@ -209,7 +209,7 @@ class EgaugeUtility:
 		import csv
 		import psycopg2
 
-		conn = psycopg2.connect("dbname=postgres user=postgres password=energyaudit1!")
+		conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
 		cur = conn.cursor()
 
 		insertFile = open(insertFilename,'r')
@@ -229,7 +229,7 @@ class EgaugeUtility:
 		print "At "+ str(datetime.now()) + " there were "+str(error)+" error(s)"
 		print "please refer to the 'error_log' file for more information.\n"
 		insertFile.close()
-		os.remove(insertFilename)
+		#os.remove(insertFilename)
 		conn.close()
 
 	def archive_egauge_data(self):

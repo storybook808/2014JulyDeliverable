@@ -247,7 +247,7 @@ class HobowareUtility:
        import psycopg2
        conn = psycopg2.connect
        
-       conn = psycopg2.connect("dbname=postgres user=postgres password=energyaudit1!")
+       conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
        cur = conn.cursor()
        
        insertFile = open(insertFilename,'r')

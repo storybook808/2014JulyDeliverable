@@ -13,3 +13,8 @@ Hobowarebin/HobowareUtility.pyc
 Hobowarebin/__init__.pyc
 hobo.py
 egaugeDriver.py
+main1.py
+main.py~
+main1.py~
+*.py~
+*.csv~

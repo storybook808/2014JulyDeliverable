@@ -21,6 +21,9 @@ __status__ = "Prototype"
 
 def process_hobo_files():
 	hobo_files = hobo.get_hobo_files()
+	if len(hobo_files) == 0:
+		print "There were no data collected from the Hobo Network\n"
+		return 0
 	for hobo_file in hobo_files:
 		output_filename = hobo.extract_data(hobo_file)
 		output_filename = hobo.edit_output(output_filename)
@@ -31,9 +34,19 @@ try:
 	print '\n                *****    Welcome to the    *****'
 	print '"Autonomous Acquisition of Energy and Environmental Data System"'
 	print '                           (A2-E2 DS)\n'
+	egauge = EgaugeUtility.EgaugeUtility()
+	try:
+		old_time = datetime.datetime.now()
+		from_str = str(old_time)[:-9]+'00'	
+		to_str = from_str
+		data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
+	except:
+		print 'Your eGauge device is not properly connected.'
+		print 'Please check your settings and that the ethernet'
+		print 'cable is properly connected, then run ADASEED again.'
+		quit()
 	raw_input('Press Enter to start the "A2-E2 DS"...')
 	#instance EgaugeUtility Class
-	egauge = EgaugeUtility.EgaugeUtility()
 	hobo = HobowareUtility.HobowareUtility()
 	#get time now and store as 'from' time
 	old_time = datetime.datetime.now()
