@@ -18,7 +18,7 @@ __maintainer__ = "Eileen Peppard"
 __email__ = "epeppard@hawaii.edu"
 __status__ = "Prototype"
 
-logging.basicConfig(filename='error_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
+logging.basicConfig(filename='ADASEED_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
 
 class ServerUtility:
 	def __init__(self,dbname='postgres',user='postgres',password='postgres'):
@@ -52,7 +52,7 @@ class ServerUtility:
 				logging.warning(str(row[0])+","+row[1]+","+str(row[2])+str(e)+"\n")
 				error = error + 1
 		print "At "+str(datetime.datetime.now()) + " there were "+str(error)+" error(s)"
-		print "please refer to the 'error_log' file for more information.\n"
+		print "please refer to the 'ADASEED_log' file for more information.\n"
 		insertFile.close()
 		#os.remove(insertFilename)
 

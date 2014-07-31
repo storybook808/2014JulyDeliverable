@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import csv
 import os
 
-logging.basicConfig(filename='error_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
+logging.basicConfig(filename='ADASEED_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
 
 class EgaugeUtility:
 	
@@ -142,12 +142,14 @@ class EgaugeUtility:
 	    	local_egauge_time = datetime.fromtimestamp(epoch_local_egauge_time)
 	    	timeDiff = local_computer_time - local_egauge_time
 	    except:
-		print 'Your eGauge device is not properly connected.'
+		print '\nYour eGauge device is not properly connected.'
 		print 'Please check your settings and that the ethernet'
-		print 'cable is properly connected, then run ADASEED again.'
+		print 'cable is properly connected, then run ADASEED again.\n'
+		raw_input('Press Enter to close ADASEED...')
 		quit()
 	    if abs(timeDiff.days*86400+timeDiff.seconds) > 45 :
-		    print "Computer and eGauge is not synced, please check the settings\nof the eGauge and local computer then run ADASEED again."
+		    print "\nComputer and eGauge is not synced, please check the settings\nof the eGauge and local computer then run ADASEED again.\n"
+		    raw_input('Press Enter to close ADASEED...')
 		    quit()
             print 'Your eGauge is properly installed.'
 
@@ -273,4 +275,7 @@ class EgaugeUtility:
 		response,content = req.request("http://"+self._egauge_url+"/cgi-bin/egauge?inst",headers={'Connect': 'Keep-Alive','accept-encoding': 'gzip'})
 		root = ET.fromstring(content)
 		return root[0].text
+
+	def clean_egauge_meta_files(self):
+		os.remove('temp.csv')
 

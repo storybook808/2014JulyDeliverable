@@ -25,7 +25,7 @@ import csv
 import logging
 import shutil
 
-logging.basicConfig(filename='error_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
+logging.basicConfig(filename='ADASEED_log',level=logging.DEBUG,format='%(asctime)s %(message)s')
 
 class HobowareUtility:
     def __init__(self):
