@@ -1,1 +1,0 @@
-This folder holds the raw data of the egauge data

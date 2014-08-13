@@ -1,0 +1,1 @@
+This folder is used to store the raw data produced by the Hoboware Pro
