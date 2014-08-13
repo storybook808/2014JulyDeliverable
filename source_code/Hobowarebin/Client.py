@@ -3,25 +3,22 @@
 # Author: Christian A. Damo
 # date: 2014-06-17
 # rev by: Reed Shinsato 
-# rev date: 2014-07-11
+# rev date: 2014-08-01
 #--------------------------
 #
-# Patch Notes: Changed name to Client
-#              Adding actual push
+# Patch Notes: Adding documentation
+#              
 #
 #--------------------------
 """
     This script creates a class client that will convert data and push 
     data to a server or local machine.
 """
-import os
-import subprocess
+# Import the libaries
 import os
 import csv
-import shutil
 import xmlrpclib
-#import psycopg2
-import logging
+import psycopg2
 
 try:
     import NISignalExpressUtility as NI
@@ -41,6 +38,7 @@ except:
 
 class Client:
     def __init__(self, type_of_file, type_of_server, configure = False, connection = None):
+        # Initialize the client settings
         self._configure = configure
         self._type_of_file = str(type_of_file).lower()
         self._type_of_server = str(type_of_server).lower()
@@ -49,6 +47,7 @@ class Client:
         self._target_directories_list = os.listdir(self._target_directories)
         self._output_row = []
         self._connection = str(connection)
+	# Check if the server exists
         try:
             if self._type_of_server == "local":
                 self._server = xmlrpclib.Server(self._connection)
@@ -57,7 +56,7 @@ class Client:
                 self._cursor = self._server.cursor()
         except:
             pass
-        
+        # Check the list of archived files 
         self.__check_archive()
         self.__choose_type_of_push(self._type_of_file, 
                                    self._target_directories_list,
@@ -105,6 +104,13 @@ class Client:
             print "no archived directories this time..."
     
     def __push_hoboware(self, target_directories_list, type_of_server):
+        """
+	        This function turns the hoboware data files into objects of the 
+             HobowareUtility to be used for reshaping the data.
+	    """
+        # Create a list of directories in the project folder
+        # Find the data directory in the project folder
+        # Extract and reshape each data file in the data directory
         target_directory_list = []
         for target_directory in target_directories_list:
             target_directory_list.append(target_directory)
