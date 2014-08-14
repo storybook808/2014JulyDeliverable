@@ -70,6 +70,20 @@ try:
 		print 'and then relaunch ADASEED again.'
 		raw_input('Press Enter to quit "ADASEED"...')
 		quit()
+  
+     #setup directories for processing
+	if not os.path.exists('egauge'):
+		os.makedirs('egauge')
+  
+	if not os.path.exists('hobo'):
+		os.makedirs('hobo')
+
+	if not os.path.exists('archive\egauge'):
+		os.makedirs('archive\egauge')
+      
+	if not os.path.exists('archive\hobo'):
+		os.makedirs('archive\hobo')
+          
 		
 
 	#check to see if egauge is properly installed and synced up

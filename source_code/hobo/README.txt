@@ -1,1 +1,0 @@
-This folder is used as a save folder for files created by the Hoboware Pro
