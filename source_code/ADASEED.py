@@ -34,6 +34,7 @@ def process_hobo_files(debug):
 	if debug:
 		#create a path to the debug hobo data file
 		debugPath = os.path.join('debug', 'hobo.csv')
+		
 		#inserts debug data files into the hobo directory
 		shutil.copy(debugPath, 'hobo')
 		
@@ -98,19 +99,28 @@ try:
 		#check to see if the first argument was "debug"
 		#if first argument is empty, it will fail as an error
 		sys.argv[1] == "debug"
-		print "Debug Mode Active"
 		#no egauge check will occur in debug mode
 		debug = True
 	except:
-		#if it fails, then debug mode is inactive (normal start)
-		debug = False
+		#if it fails, then it will prompt the user for debug mode
+		#this is to put the executable into debug mode
+		cmd = raw_input("Enter Debug Mode? (Y/N): ")
+		if cmd == "Y":
+			debug = True
 
-		#check to see if egauge is properly installed and synced up
-		egauge.check_time_sync()
+		else:
+			#normal start
+			debug = False
+		
+			#check to see if egauge is properly installed and synced up
+			egauge.check_time_sync()
+
+	if debug == True:
+		print "Debug Mode Active"
 
 	#wait for the user so that they can make sure everything is in working order
 	raw_input('Press Enter to start "ADASEED"...')
-
+	
 	#get time now and store as 'from' time for use in the "except" block.
 	old_time = datetime.datetime.now()
 	from_str = str(old_time)[:-9]+'00'
