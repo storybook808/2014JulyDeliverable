@@ -10,6 +10,8 @@ from Egaugebin import EgaugeUtility
 from Databasebin import DatabaseUtility
 from Hobowarebin import HobowareUtility
 import os
+import sys
+import shutil
 
 __author__ = "Christian A. Damo"
 __copyright__ = "Copyright 2014 School of Architecture, University of Hawaii at Manoa"
@@ -20,14 +22,21 @@ __email__ = "epeppard@hawaii.edu"
 __status__ = "Prototype"
 
 
-def process_hobo_files():
+def process_hobo_files(debug):
 	'''
-	given: nothing
+	given:  debug flag
 	return: nothing, but carries out the entire processing of the hobo files
 	        when they are saved to the ADASEED>hobo folder. Reshapes the raw file to a csv,
 		then edits the output by reshaping to eshape and finally inserting it
 		into the database.
 	'''
+	#check for active debug mode
+	if debug:
+		#create a path to the debug hobo data file
+		debugPath = os.path.join('debug', 'hobo.csv')
+		#inserts debug data files into the hobo directory
+		shutil.copy(debugPath, 'hobo')
+		
 	#get the files in the ADASEED>hobo directory
 	hobo_files = hobo.get_hobo_files()
 	#if there's no files to process, tell the user there isn't any and end the function
@@ -48,7 +57,7 @@ def process_hobo_files():
 		hobo.clean_folder()
 
 try:
-	#displaoy greeting
+	#display greeting
 	print ''
 	print '                  *****    Welcome to the    *****'
 	print '"Automatic Data Acquisition System for Energy and Environmental Data"'
@@ -71,7 +80,7 @@ try:
 		raw_input('Press Enter to quit "ADASEED"...')
 		quit()
   
-     #setup directories for processing
+  	#setup directories for processing
 	if not os.path.exists('egauge'):
 		os.makedirs('egauge')
   
@@ -83,11 +92,22 @@ try:
       
 	if not os.path.exists('archive\hobo'):
 		os.makedirs('archive\hobo')
-          
-		
 
-	#check to see if egauge is properly installed and synced up
-	egauge.check_time_sync()
+	#check to see if ADASEED was placed into debug mode
+	try:
+		#check to see if the first argument was "debug"
+		#if first argument is empty, it will fail as an error
+		sys.argv[1] == "debug"
+		print "Debug Mode Active"
+		#no egauge check will occur in debug mode
+		debug = True
+	except:
+		#if it fails, then debug mode is inactive (normal start)
+		debug = False
+
+		#check to see if egauge is properly installed and synced up
+		egauge.check_time_sync()
+
 	#wait for the user so that they can make sure everything is in working order
 	raw_input('Press Enter to start "ADASEED"...')
 
@@ -108,27 +128,35 @@ try:
 		time.sleep(7200)
 
 		#insert hobo data into database, etc. see documentation above
-		process_hobo_files()
+		process_hobo_files(debug)
 
-		#take time now store as "to" time, the "from" and "to" time is neeaded
+		#take time now store as "to" time, the "from" and "to" time is needed
 		#to query the window of data you want from the egauge.
 		#probably should package this into one function to keep the main code clean
 		new_time = datetime.datetime.now()
 		#thisis a formatting issue
 		to_str = str(new_time)[:-9]+'00'
-		#query egauge data between old time and new time
-		data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
-		#convert the data to csv
-		egaugeFilename = egauge.data_to_csv(data,from_str,to_str)
-		#convert csv to eileen shape (aka eshape)
-		outputFilename= egauge.egauge_to_eshape(egaugeFilename)
+		#check for active debug mode
+		if not debug:
+			#query egauge data between old time and new time
+			data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
+			#convert the data to csv
+			egaugeFilename = egauge.data_to_csv(data,from_str,to_str)
+			#convert csv to eileen shape
+			outputFilename= egauge.egauge_to_eshape(egaugeFilename)
+		else:
+			#create path to debug egauge data file
+			debugPath = os.path.join('debug', 'egauge.csv')
+			#copy preset egauge data from debug folder
+			#egauge_to_eshape reads from the egauge folder
+			shutil.copy(debugPath, 'egauge')
+			#convert csv to eileen shape
+			outputFilename = egauge.egauge_to_eshape('egauge.csv')
 		#insert egauge data into database
 		database.insert_data_into_database(outputFilename,'egauge')
 		#set old time to new time, for the next iteration 2 hours from now
 		from_str = to_str
-		egauge.store_last_query_time(from_str)
-
-		#move files to the archive folder
+		#egauge.store_l files to the archive folder
 		egauge.archive_egauge_data()
 		hobo.archive_hobo_data()
 
@@ -138,17 +166,27 @@ except KeyboardInterrupt:
 	#let the user know wer're finishing up
 	print 'Ending the "Automatic Data Acquisition System for Energy and Environmental Data"\n'
 	#process any hobo files
-	process_hobo_files()
+	process_hobo_files(debug)
 
 	#gather the last set of data from the eguage
 	egauge.retrieve_last_query_time()
 	to_str = str(datetime.datetime.now())[:-9]+'00'
-	#query egauge data between old time and new time
-	data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
-	#convert the data to csv
-	egaugeFilename = egauge.data_to_csv(data,from_str,to_str)
-	#convert csv to eileen shape
-	outputFilename= egauge.egauge_to_eshape(egaugeFilename)
+	#check for active debug mode
+	if not debug:
+		#query egauge data between old time and new time
+		data, from_str, to_str = egauge.pull_from_egauge(from_str,to_str)
+		#convert the data to csv
+		egaugeFilename = egauge.data_to_csv(data,from_str,to_str)
+		#convert csv to eileen shape
+		outputFilename= egauge.egauge_to_eshape(egaugeFilename)
+	else:
+		#create path to debug egauge data file
+		debugPath = os.path.join('debug', 'egauge.csv')
+		#copy preset egauge data from debug folder
+		#egauge_to_eshape reads from the egauge folder
+		shutil.copy(debugPath, 'egauge')
+		#convert csv to eileen shape
+		outputFilename = egauge.egauge_to_eshape('egauge.csv')
 	#insert egauge data into database
 	database.insert_data_into_database(outputFilename,'egauge')
 
