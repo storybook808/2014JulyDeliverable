@@ -26,9 +26,9 @@ def process_hobo_files(debug):
 	'''
 	given:  debug flag
 	return: nothing, but carries out the entire processing of the hobo files
-	        when they are saved to the ADASEED>hobo folder. Reshapes the raw file to a csv,
-		then edits the output by reshaping to eshape and finally inserting it
-		into the database.
+	        when they are saved to the ADASEED>hobo folder. Reshapes the raw 
+             file to a csv, then edits the output by reshaping to eshape and 
+             finally inserting it into the database.
 	'''
 	#check for active debug mode
 	if debug:
